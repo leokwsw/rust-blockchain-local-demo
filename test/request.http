@@ -1,0 +1,10 @@
+### GET all block
+GET http://localhost:8080
+
+### Add New Block
+POST http://localhost:8080/add
+Content-Type: application/json
+
+{
+  "data": "Example Block 1 Data"
+}
