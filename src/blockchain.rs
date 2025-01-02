@@ -1,4 +1,6 @@
 use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::io::{BufReader, Write};
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -37,8 +39,12 @@ pub struct Blockchain {
 
 impl Blockchain {
     pub fn new() -> Self {
-        Self {
-            blocks: vec![Block::new("Genesis Block".into(), "0".into())],
+        if let Ok(blocks) = Self::load_from_file("blockchain.json") {
+            Blockchain { blocks }
+        } else {
+            Blockchain {
+                blocks: vec![Block::new("Genesis Block".into(), "0".into())],
+            }
         }
     }
 
@@ -46,21 +52,20 @@ impl Blockchain {
         let previous_hash = self.blocks.last().unwrap().hash.clone();
         let new_block = Block::new(data, previous_hash);
         self.blocks.push(new_block);
+        self.save_to_file("blockchain.json").unwrap();
+    }
+
+    pub fn save_to_file(&self, filename: &str) -> std::io::Result<()> {
+        let mut file = File::create(filename)?;
+        let json = serde_json::to_string_pretty(&self.blocks)?;
+        file.write_all(json.as_bytes())?;
+        Ok(())
+    }
+
+    pub fn load_from_file(filename: &str) -> std::io::Result<Vec<Block>> {
+        let file = File::open(filename)?;
+        let reader = BufReader::new(file);
+        let blocks = serde_json::from_reader(reader)?;
+        Ok(blocks)
     }
 }
-
-// fn main() {
-//     let block = Block {
-//         id: Uuid::new_v4(),
-//         timestamp: 1234567890,
-//         data: "Test Data".into(),
-//         previous_hash: "0000".into(),
-//         hash: "abcd1234".into(),
-//     };
-//
-//     let serialized = serde_json::to_string(&block).unwrap();
-//     println!("Serialized Block: {}", serialized);
-//
-//     let deserialized: Block = serde_json::from_str(&serialized).unwrap();
-//     println!("Deserialized Block: {:?}", deserialized);
-// }
